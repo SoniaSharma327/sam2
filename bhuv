@@ -1,0 +1,27 @@
+def map_function(text):
+    words = text.split()
+    mapped = []
+    for word in words:
+        mapped.append((word, 1))
+    return mapped
+def reduce_function(mapped):
+    shuffle_sort = {}
+    for word, count in mapped:
+        if word in shuffle_sort:
+            shuffle_sort[word].append(count)
+        else:
+            shuffle_sort[word] = [count]
+    word_count = {}
+    for word, counts in shuffle_sort.items():
+        word_count[word] = sum(counts)
+    return word_count
+def main():
+    text = "hello world welcome to the world of python hello python"
+    mapped = map_function(text)
+    word_count = reduce_function(mapped)
+    for word, count in word_count.items():
+        print(f"{word}: {count}")
+if __name__ == "__main__":
+    main()
+
+     
