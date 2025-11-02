@@ -1,27 +1,303 @@
-def map_function(text):
-    words = text.split()
-    mapped = []
-    for word in words:
-        mapped.append((word, 1))
-    return mapped
-def reduce_function(mapped):
-    shuffle_sort = {}
-    for word, count in mapped:
-        if word in shuffle_sort:
-            shuffle_sort[word].append(count)
-        else:
-            shuffle_sort[word] = [count]
-    word_count = {}
-    for word, counts in shuffle_sort.items():
-        word_count[word] = sum(counts)
-    return word_count
-def main():
-    text = "hello world welcome to the world of python hello python"
-    mapped = map_function(text)
-    word_count = reduce_function(mapped)
-    for word, count in word_count.items():
-        print(f"{word}: {count}")
-if __name__ == "__main__":
-    main()
+import tensorflow as tf
 
-     
+# Check eager execution (dynamic computation)
+print("Eager Execution:", tf.executing_eagerly())
+
+# Create tensors
+a = tf.constant([[1, 2], [3, 4]])   # 2x2 constant tensor
+b = tf.Variable([[5, 6], [7, 8]])   # 2x2 variable tensor
+
+# Manipulate tensors
+c = a + b                          # Addition
+d = a * b                          # Element-wise multiplication
+e = tf.matmul(a, b)                # Matrix multiplication
+
+# Display results
+print("\nTensor a:\n", a)
+print("Tensor b:\n", b)
+print("Addition (a+b):\n", c)
+print("Element-wise multiplication (a*b):\n", d)
+print("Matrix multiplication (a@b):\n", e)
+print("Shape of result:", e.shape)
+print("Data type:", e.dtype)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+import seaborn as sns
+from sklearn.preprocessing import MinMaxScaler
+
+# Load sample dataset
+df = sns.load_dataset("titanic")
+
+# Handle missing values
+df['age'] = df['age'].fillna(df['age'].mean())
+df['embarked'] = df['embarked'].fillna('Unknown')
+
+# Encode categorical variables
+df = pd.get_dummies(df, columns=['sex', 'embarked'])
+
+# Normalize numerical column
+scaler=MinMaxScaler()
+df['age'] = scaler.fit_transform(df[['age']])
+
+# Show result
+print(df.head())
+
+
+
+
+
+
+
+
+
+
+import pandas as pd 
+import seaborn as sns 
+import matplotlib.pyplot as plt
+
+df = sns.load_dataset("titanic")
+# 1. Histogram of a numerical feature 
+plt.figure(figsize=(6,4)) 
+sns.histplot(df['age'].dropna(), bins=20, kde=True, color='skyblue')
+plt.title("Age Distribution")
+plt.show()
+plt.figure(figsize=(6,4)) 
+sns.scatterplot(x='age', y='fare', hue='sex', data=df) 
+plt.title("Age vs Fare by Sex")
+plt.show()
+plt.figure(figsize=(6,5)) 
+numeric_df = df.select_dtypes(include='number')   # select only numeric columns 
+sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap") 
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+# Import necessary libraries
+from gensim.models import Word2Vec
+import faiss
+import numpy as np
+
+# Sample text corpus
+corpus = [
+    "generative AI is transforming technology",
+    "word embeddings capture semantic meaning",
+    "FAISS helps in fast similarity search",
+    "AI applications include NLP and computer vision",
+    "semantic similarity finds related words"
+]
+
+# Preprocess text (simple tokenization)
+tokenized_corpus = [sentence.lower().split() for sentence in corpus]
+
+# 1. Train Word2Vec model
+model = Word2Vec(sentences=tokenized_corpus, vector_size=50, window=3, min_count=1, workers=2)
+
+# 2. Extract embeddings for all words in the vocabulary
+words = list(model.wv.index_to_key)
+embeddings = np.array([model.wv[word] for word in words]).astype('float32')
+
+# 3. Build FAISS index
+dimension = embeddings.shape[1]
+index = faiss.IndexFlatL2(dimension)
+index.add(embeddings)
+
+
+# 4. Perform similarity search
+query_word = "ai"
+query_vector = model.wv[query_word].reshape(1, -1)
+distances, indices = index.search(query_vector, k=3)
+
+# 5. Display results
+print(f"Words most similar to '{query_word}':")
+for idx in indices[0]:
+    print(words[idx])
+
+
+
+
+
+
+
+
+
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load MNIST dataset
+(x_train, _), _ = tf.keras.datasets.mnist.load_data()
+x_train = x_train / 255.0
+x_train = np.expand_dims(x_train, -1)
+
+# Make a very small denoising model
+model = tf.keras.Sequential([
+    tf.keras.layers.Input(shape=(28, 28, 1)),
+    tf.keras.layers.Conv2D(16, 3, activation='relu', padding='same'),
+    tf.keras.layers.Conv2D(1, 3, activation='sigmoid', padding='same')
+])
+
+# Train model to remove noise (simulating diffusion)
+noisy = x_train + 0.5 * np.random.randn(*x_train.shape)
+noisy = np.clip(noisy, 0., 1.)
+
+model.compile(optimizer='adam', loss='mse')
+model.fit(noisy, x_train, epochs=1, batch_size=128, verbose=1)
+
+# Generate new images (start from random noise)
+for i in range(5):
+    img = np.random.rand(1, 28, 28, 1)
+    for _ in range(3):      # denoise 3 times
+        img = model.predict(img)
+    plt.subplot(1, 5, i + 1)
+    plt.imshow(img[0, :, :, 0], cmap='gray')
+    plt.axis('off')
+
+plt.suptitle("Easy Diffusion-like MNIST Image Generation")
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+# Install required libraries
+!pip install transformers datasets evaluate -q
+
+# Import modules
+from transformers import pipeline
+import evaluate
+
+# Load summarization model
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
+# Input text
+text = "Artificial Intelligence enables machines to learn from data, adapt to new inputs, and perform human-like tasks efficiently."
+
+# Generate summary
+summary = summarizer(text, max_length=30, min_length=5, do_sample=False)[0]['summary_text']
+
+# Evaluate with ROUGE
+rouge = evaluate.load("rouge")
+results = rouge.compute(predictions=[summary], references=["AI enables machines to learn and adapt like humans."])
+
+print("Summary:", summary)
+print("ROUGE Score:", results)
+
+
+
+
+
+
+
+
+
+
+
+
+
+from transformers import AutoModelForCausalLM
+import torch, torch.nn.utils.prune as prune
+
+model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
+
+# Pruning 30% weights in Linear layers
+for _, m in model.named_modules():
+    if isinstance(m, torch.nn.Linear):
+        prune.l1_unstructured(m, name="weight", amount=0.3)
+
+# Quantization (safe cast to float16 instead of int8)
+model.half()
+print("✅ GPT-2 optimized using pruning + float16 quantization")
+
+
+
+
+
+
+
+
+
+
+
+
+
+from transformers import pipeline
+
+# Load a pre-trained text generation model
+generator = pipeline("text-generation", model="gpt2")
+
+# Step 1: Analyze bias
+prompts = ["The nurse said that", "The doctor said that"]
+for p in prompts:
+    output = generator(p, max_new_tokens=20, num_return_sequences=1)[0]['generated_text']
+    print(f"\nPrompt: {p}\nOutput: {output}")
+
+# Step 2: Mitigate bias using neutral prompt rephrasing
+neutral_prompts = ["The medical professional said that"]
+for p in neutral_prompts:
+    output = generator(p, max_new_tokens=20, num_return_sequences=1)[0]['generated_text']
+    print(f"\nMitigated Prompt: {p}\nOutput: {output}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+text = """Climate change is accelerating due to human activity. Sea levels are rising.
+Scientists urge emission cuts and renewable energy adoption. Forests help absorb carbon."""
+
+def researcher():  # extracts facts
+    return text.split('.')[:3]
+
+def writer(facts):  # creates short summary
+    return " ".join(f.strip() for f in facts if f).strip()
+
+def editor(summary):  # evaluates summary
+    return "ACCEPTED ✅" if len(summary.split()) <= 40 else "REVISE ❌"
+
+facts = researcher()
+print("Researcher:", facts)
+summary = writer(facts)
+print("\nWriter:", summary)
+feedback = editor(summary)
+print("\nEditor:", feedback)
