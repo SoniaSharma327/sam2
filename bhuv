@@ -224,6 +224,39 @@ print("ROUGE Score:", results)
 
 
 
+from sentence_transformers import SentenceTransformer
+from transformers import pipeline
+import faiss
+
+# Data
+docs = ["Paris is capital of France.", "Taj Mahal is in India.", "Mount Everest is the highest peak."]
+query = "Where is the Taj Mahal?"
+
+# Embeddings + Index
+model = SentenceTransformer('all-MiniLM-L6-v2')
+emb = model.encode(docs)
+index = faiss.IndexFlatL2(emb.shape[1])
+index.add(emb)
+
+# Retrieve
+q_emb = model.encode([query])
+_, I = index.search(q_emb, 1)
+context = docs[I[0][0]]
+
+# Generate
+llm = pipeline("text-generation", model="gpt2")
+print(llm(f"Context: {context}\nQ: {query}\nA:", max_new_tokens=30)[0]["generated_text"])
+
+
+
+
+
+
+
+
+
+
+
 
 
 from transformers import AutoModelForCausalLM
